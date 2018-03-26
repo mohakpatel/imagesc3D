@@ -1,4 +1,4 @@
-function  imagesc3D( Img, disprange )
+function  imagesc3D( varargin )
 %IMSHOW3DFULL displays 3D grayscale or RGB images from three perpendicular
 %views (i.e. axial, sagittal, and coronal) in slice by slice fashion with
 %mouse based slice browsing and window and level adjustment control.
@@ -7,7 +7,7 @@ function  imagesc3D( Img, disprange )
 % imshow3Dfull ( Image )
 % imshow3Dfull ( Image , [] )
 % imshow3Dfull ( Image , [LOW HIGH] )
-%   
+%
 %    Image:      3D image MxNxKxC (K slices of MxN images) C is either 1
 %                (for grayscale images) or 3 (for RGB images)
 %    [LOW HIGH]: display range that controls the display intensity range of
@@ -21,25 +21,25 @@ function  imagesc3D( Img, disprange )
 %
 % Use 'A', 'S', and 'C' buttons to switch between axial, sagittal and
 % coronal views, respectivelly.
-% 
-% "Auto W/L" button adjust the window and level automatically 
+%
+% "Auto W/L" button adjust the window and level automatically
 %
 % While "Fine Tune" check box is checked the window/level adjustment gets
 % 16 times less sensitive to mouse movement, to make it easier to control
-% display intensity rang.
+% display intensity range.
 %
 % Note: The sensitivity of mouse based window and level adjustment is set
 % based on the user defined display intensity range; the wider the range
 % the more sensitivity to mouse drag.
-% 
-% 
+%
+%
 %   Example
 %   --------
 %       % Display an image (MRI example)
-%       load mri 
-%       Image = squeeze(D); 
-%       figure, 
-%       imshow3Dfull(Image) 
+%       load mri
+%       Image = squeeze(D);
+%       figure,
+%       imshow3Dfull(Image)
 %
 %       % Display the image, adjust the display range
 %       figure,
@@ -53,7 +53,40 @@ function  imagesc3D( Img, disprange )
 % - Revision: 1.1.0   Date: 2013/04/19
 % - Revision: 2.0.0   Date: 2014/08/05
 % - Revision: 2.5.0   Date: 2016/09/22
-% 
+%
+
+clim = [];
+switch (nargin)
+    case 0
+        inp = {'CDataMapping','scaled'};
+    case 1
+        inp = {varargin{1},'CDataMapping','scaled'};
+        Img = varargin{1};
+    case 3
+        inp = {varargin{:},'CDataMapping','scaled'};
+        Img = varargin{1};
+    otherwise
+        
+        % Determine if last input is clim
+        if isequal(size(varargin{end}),[1 2])
+            str = false(length(varargin),1);
+            for n=1:length(varargin)
+                str(n) = ischar(varargin{n});
+            end
+            str = find(str);
+            if isempty(str) || (rem(length(varargin)-min(str),2)==0)
+                clim = varargin{end};
+                varargin(end) = []; % Remove last cell
+            else
+                clim = [];
+            end
+        else
+            clim = [];
+        end
+        inp = {varargin{:},'CDataMapping','scaled'};
+        Img = varargin{1};
+        disprange = clim;
+end
 
 sno = size(Img);  % image size
 sno_a = sno(3);  % number of axial slices
@@ -128,7 +161,7 @@ elseif isa(Img,'logical')
     LevV =0.5;
     Win = 1;
     WLAdjCoe = 0.1;
-end 
+end
 
 ImgAx = Img;
 if verLessThan('matlab', '8')
@@ -162,7 +195,12 @@ else
 end
 
 hdl_im = axes('position',[0,0.2,1,0.8]);
-imshow(squeeze(Img(:,:,S,:)), [Rmin Rmax])
+inp_ = inp;
+inp_{1} = squeeze(inp{1}(:,:,S,:));
+imagesc(inp_{:})
+axis off;
+axis image;
+
 
 FigPos = get(gcf,'Position');
 S_Pos = [50 70 uint16(FigPos(3)-100)+1 20];
@@ -181,23 +219,23 @@ Vwtxt_Pos = [255 20 35 20];
 VAxBtn_Pos = [290 20 15 20];
 VSgBtn_Pos = [310 20 15 20];
 VCrBtn_Pos = [330 20 15 20];
-
 if sno > 1
     shand = uicontrol('Style', 'slider','Min',1,'Max',sno,'Value',S,'SliderStep',[1/(sno-1) 10/(sno-1)],'Position', S_Pos,'Callback', {@SliceSlider, Img});
     stxthand = uicontrol('Style', 'text','Position', Stxt_Pos,'String',sprintf('Slice# %d / %d',S, sno), 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', SFntSz);
 else
     stxthand = uicontrol('Style', 'text','Position', Stxt_Pos,'String','2D image', 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', SFntSz);
-end    
+end
 ltxthand = uicontrol('Style', 'text','Position', Ltxt_Pos,'String','Level: ', 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', LFntSz);
 wtxthand = uicontrol('Style', 'text','Position', Wtxt_Pos,'String','Window: ', 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', WFntSz);
 lvalhand = uicontrol('Style', 'edit','Position', Lval_Pos,'String',sprintf('%6.0f',LevV), 'BackgroundColor', [1 1 1], 'FontSize', LVFntSz,'Callback', @WinLevChanged);
 wvalhand = uicontrol('Style', 'edit','Position', Wval_Pos,'String',sprintf('%6.0f',Win), 'BackgroundColor', [1 1 1], 'FontSize', WVFntSz,'Callback', @WinLevChanged);
+AutoAdjust(1,1)
 Btnhand = uicontrol('Style', 'pushbutton','Position', Btn_Pos,'String','Auto W/L', 'FontSize', BtnSz, 'Callback' , @AutoAdjust);
 ChBxhand = uicontrol('Style', 'checkbox','Position', ChBx_Pos,'String','Fine Tune', 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', ChBxSz);
 Vwtxthand = uicontrol('Style', 'text','Position', Vwtxt_Pos,'String','View: ', 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', LFntSz);
-VAxBtnhand = uicontrol('Style', 'pushbutton','Position', VAxBtn_Pos,'String','A', 'FontSize', BtnSz, 'Callback' , @AxialView);
-VSgBtnhand = uicontrol('Style', 'pushbutton','Position', VSgBtn_Pos,'String','S', 'FontSize', BtnSz, 'Callback' , @SagittalView);
-VCrBtnhand = uicontrol('Style', 'pushbutton','Position', VCrBtn_Pos,'String','C', 'FontSize', BtnSz, 'Callback' , @CoronalView);
+VAxBtnhand = uicontrol('Style', 'pushbutton','Position', VAxBtn_Pos,'String','3', 'FontSize', BtnSz, 'Callback' , @AxialView);
+VSgBtnhand = uicontrol('Style', 'pushbutton','Position', VSgBtn_Pos,'String','1', 'FontSize', BtnSz, 'Callback' , @SagittalView);
+VCrBtnhand = uicontrol('Style', 'pushbutton','Position', VCrBtn_Pos,'String','2', 'FontSize', BtnSz, 'Callback' , @CoronalView);
 
 set (gcf, 'WindowScrollWheelFcn', @mouseScroll);
 set (gcf, 'ButtonDownFcn', @mouseClick);
@@ -280,13 +318,13 @@ set(gcf,'ResizeFcn', @figureResized)
 % -=< Window and level mouse adjustment >=-
     function WinLevAdj(varargin)
         PosDiff = get(0,'PointerLocation') - InitialCoord;
-
+        
         Win = Win + PosDiff(1) * WLAdjCoe * FineTuneC(get(ChBxhand,'Value')+1);
         LevV = LevV - PosDiff(2) * WLAdjCoe * FineTuneC(get(ChBxhand,'Value')+1);
         if (Win < 1)
             Win = 1;
         end
-
+        
         [Rmin, Rmax] = WL2R(Win,LevV);
         caxis([Rmin, Rmax])
         set(lvalhand, 'String', sprintf('%6.0f',LevV));
@@ -296,13 +334,13 @@ set(gcf,'ResizeFcn', @figureResized)
 
 % -=< Window and level text adjustment >=-
     function WinLevChanged(varargin)
-
+        
         LevV = str2double(get(lvalhand, 'string'));
         Win = str2double(get(wvalhand, 'string'));
         if (Win < 1)
             Win = 1;
         end
-
+        
         [Rmin, Rmax] = WL2R(Win,LevV);
         caxis([Rmin, Rmax])
     end
@@ -333,7 +371,7 @@ set(gcf,'ResizeFcn', @figureResized)
             S_s = S;
         elseif View == 'C'
             S_c = S;
-        end            
+        end
         View = 'A';
         
         Img = ImgAx;
@@ -341,8 +379,12 @@ set(gcf,'ResizeFcn', @figureResized)
         sno = sno_a;
         cla(hdl_im);
         hdl_im = axes('position',[0,0.2,1,0.8]);
-        imshow(squeeze(Img(:,:,S,:)), [Rmin Rmax])
-
+        inp_ = inp;
+        inp_{1} = squeeze(ImgAx(:,:,S,:));
+        imagesc(inp_{:})
+        axis off
+        axis image
+        
         if sno > 1
             shand = uicontrol('Style', 'slider','Min',1,'Max',sno,'Value',S,'SliderStep',[1/(sno-1) 10/(sno-1)],'Position', S_Pos,'Callback', {@SliceSlider, Img});
             stxthand = uicontrol('Style', 'text','Position', Stxt_Pos,'String',sprintf('Slice# %d / %d',S, sno), 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', SFntSz);
@@ -368,16 +410,20 @@ set(gcf,'ResizeFcn', @figureResized)
             S_a = S;
         elseif View == 'C'
             S_c = S;
-        end            
+        end
         View = 'S';
-
+        
         Img = ImgSg;
         S = S_s;
         sno = sno_s;
         cla(hdl_im);
         hdl_im = axes('position',[0,0.2,1,0.8]);
-        imshow(squeeze(Img(:,:,S,:)), [Rmin Rmax])
-
+        inp_ = inp;
+        inp_{1} = squeeze(Img(:,:,S,:));
+        imagesc(inp_{:})
+        axis off;
+        axis image;
+        
         if sno > 1
             shand = uicontrol('Style', 'slider','Min',1,'Max',sno,'Value',S,'SliderStep',[1/(sno-1) 10/(sno-1)],'Position', S_Pos,'Callback', {@SliceSlider, Img});
             stxthand = uicontrol('Style', 'text','Position', Stxt_Pos,'String',sprintf('Slice# %d / %d',S, sno), 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', SFntSz);
@@ -391,11 +437,11 @@ set(gcf,'ResizeFcn', @figureResized)
         else
             set(stxthand, 'String', '2D image');
         end
-
+        
         set(get(gca,'children'),'cdata',squeeze(Img(:,:,S,:)))
         set (gcf, 'ButtonDownFcn', @mouseClick);
         set(get(gca,'Children'),'ButtonDownFcn', @mouseClick);
-
+        
     end
 
 % -=< Coronal view callback function >=-
@@ -404,7 +450,7 @@ set(gcf,'ResizeFcn', @figureResized)
             S_a = S;
         elseif View == 'S'
             S_s = S;
-        end            
+        end
         View = 'C';
         
         Img = ImgCr;
@@ -412,8 +458,12 @@ set(gcf,'ResizeFcn', @figureResized)
         sno = sno_c;
         cla(hdl_im);
         hdl_im = axes('position',[0,0.2,1,0.8]);
-        imshow(squeeze(Img(:,:,S,:)), [Rmin Rmax])
-
+        inp_ = inp;
+        inp_{1} = squeeze(Img(:,:,S,:));
+        imagesc(inp_{:})
+        axis off;
+        axis image;
+        
         if sno > 1
             shand = uicontrol('Style', 'slider','Min',1,'Max',sno,'Value',S,'SliderStep',[1/(sno-1) 10/(sno-1)],'Position', S_Pos,'Callback', {@SliceSlider, Img});
             stxthand = uicontrol('Style', 'text','Position', Stxt_Pos,'String',sprintf('Slice# %d / %d',S, sno), 'BackgroundColor', [0.8 0.8 0.8], 'FontSize', SFntSz);
@@ -427,7 +477,7 @@ set(gcf,'ResizeFcn', @figureResized)
         else
             set(stxthand, 'String', '2D image');
         end
-
+        
         set(get(gca,'children'),'cdata',squeeze(Img(:,:,S,:)))
         set (gcf, 'ButtonDownFcn', @mouseClick);
         set(get(gca,'Children'),'ButtonDownFcn', @mouseClick);
