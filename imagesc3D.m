@@ -1,17 +1,21 @@
 function  imagesc3D( varargin )
-%IMSHOW3DFULL displays 3D grayscale or RGB images from three perpendicular
-%views (i.e. axial, sagittal, and coronal) in slice by slice fashion with
-%mouse based slice browsing and window and level adjustment control.
+%imagesc3D displays 3D images using imagesc fuction from 3 perpendicular
+%views (i.e. 3 (e1-e2 planes), 1 (e2-e3 planes), 2 (e3-e1 planes), )) in 
+%slice by slice fashion with mouse based slice browsing and window and 
+%level adjustment control.
+%
+% This function is adapted from imshow3Dfull v2.5 published on Mathwork 
+% File Exhange by Mayasam Shahedi
+%
+% Contributors:
+% Mohak Patel (patelbmohak@gmail.com) and Alex Landauer (alex.landauer@gmail.com)
+% Date: 26th March 2018
+%
+% Use Github repo (https://github.com/mohakpatel/imagesc3D) for bug fixes. 
 %
 % Usage:
-% imshow3Dfull ( Image )
-% imshow3Dfull ( Image , [] )
-% imshow3Dfull ( Image , [LOW HIGH] )
+% imagesc3D(...) is the same as imagesc(...)
 %
-%    Image:      3D image MxNxKxC (K slices of MxN images) C is either 1
-%                (for grayscale images) or 3 (for RGB images)
-%    [LOW HIGH]: display range that controls the display intensity range of
-%                a grayscale image (default: the widest available range)
 %
 % Use the scroll bar or mouse scroll wheel to switch between slices. To
 % adjust window and level values keep the mouse right button pressed and
@@ -19,10 +23,9 @@ function  imagesc3D( varargin )
 % window adjustment). Window and level adjustment control works only for
 % grayscale images.
 %
-% Use 'A', 'S', and 'C' buttons to switch between axial, sagittal and
-% coronal views, respectivelly.
+% Use '3', '1', and '2' buttons to switch between projected viewing planes 
 %
-% "Auto W/L" button adjust the window and level automatically
+% "Auto W/L" button adjust the window and level automatically. 
 %
 % While "Fine Tune" check box is checked the window/level adjustment gets
 % 16 times less sensitive to mouse movement, to make it easier to control
@@ -39,20 +42,12 @@ function  imagesc3D( varargin )
 %       load mri
 %       Image = squeeze(D);
 %       figure,
-%       imshow3Dfull(Image)
+%       imagesc3D(Image)
 %
-%       % Display the image, adjust the display range
+%       % Display the image, change the colormap
 %       figure,
-%       imshow3Dfull(Image,[20 100]);
-%
-%   See also IMSHOW.
-
-%
-% - Maysam Shahedi (mshahedi@gmail.com)
-% - Released: 1.0.0   Date: 2013/04/15
-% - Revision: 1.1.0   Date: 2013/04/19
-% - Revision: 2.0.0   Date: 2014/08/05
-% - Revision: 2.5.0   Date: 2016/09/22
+%       imshow3Dfull(Image);
+%       colormap('hot')
 %
 
 clim = [];
@@ -380,7 +375,7 @@ set(gcf,'ResizeFcn', @figureResized)
         cla(hdl_im);
         hdl_im = axes('position',[0,0.2,1,0.8]);
         inp_ = inp;
-        inp_{1} = squeeze(ImgAx(:,:,S,:));
+        inp_{1} = squeeze(Img(:,:,S,:));
         imagesc(inp_{:})
         axis off
         axis image
@@ -418,9 +413,9 @@ set(gcf,'ResizeFcn', @figureResized)
         sno = sno_s;
         cla(hdl_im);
         hdl_im = axes('position',[0,0.2,1,0.8]);
-        inp_ = inp;
-        inp_{1} = squeeze(Img(:,:,S,:));
-        imagesc(inp_{:})
+        inp_sg = inp;
+        inp_sg{1} = squeeze(Img(:,:,S,:));
+        imagesc(inp_sg{:})
         axis off;
         axis image;
         
@@ -438,7 +433,7 @@ set(gcf,'ResizeFcn', @figureResized)
             set(stxthand, 'String', '2D image');
         end
         
-        set(get(gca,'children'),'cdata',squeeze(Img(:,:,S,:)))
+        set(get(gca,'children'),'cdata',fliplr(squeeze(Img(:,:,S,:))))
         set (gcf, 'ButtonDownFcn', @mouseClick);
         set(get(gca,'Children'),'ButtonDownFcn', @mouseClick);
         
@@ -484,4 +479,3 @@ set(gcf,'ResizeFcn', @figureResized)
     end
 
 end
-% -=< Maysam Shahedi (mshahedi@gmail.com), September 22, 2016>=-
