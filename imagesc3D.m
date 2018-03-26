@@ -32,7 +32,7 @@ function  imagesc3D( varargin )
 % File Exhange by Mayasam Shahedi
 % 
 % Contributors:
-% Mohak Patel (patelbmohak@gmail.com) and Alex Landauer (alex.landauer@gmail.com)
+% Mohak Patel and Alex Landauer
 % Date: 26th March 2018
 % 
 % Use Github repo (https://github.com/mohakpatel/imagesc3D) for bug fixes. 

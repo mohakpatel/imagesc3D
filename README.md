@@ -11,7 +11,8 @@ imagesc3D(...) is the same as imagesc(...)
 
 #### Contributors
 
-Mohak Patel (patelbmohak@gmail.com) and Alex Landauer (alex.landauer@gmail.com)
+Mohak Patel and Alex Landauer
+
 Date: 26th March 2018
 
 This function is adapted from imshow3Dfull v2.5 published on Mathwork 
